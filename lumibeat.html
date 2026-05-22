@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumiBeat | Official Site</title>
+    <link href="https://fonts.googleapis.com/css2?family=Verdana:wght@400;700&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: #ff5500;
+            --accent-yellow: #ffa500;
+            --bg-dark: #070708;
+            --card-bg: #121214;
+            --code-green: #00ff9d;
+            --nav-bg: rgba(7, 7, 8, 0.95);
+            --glass-bg: rgba(20, 20, 25, 0.7);
+            --glass-border: rgba(255, 85, 0, 0.3);
+            --theme-overlay-85: rgba(15, 6, 2, 0.92);
+        }
+
+        /* 基礎樣式與自訂滑鼠優化 */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Verdana', 'Noto Sans TC', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            overflow-x: hidden;
+            line-height: 1.6;
+            cursor: none; 
+        }
+
+        /* 自訂下落式音符滑鼠 */
+        #custom-cursor {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-orange);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px var(--primary-orange);
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+        }
+        
+        body.clickable-hover #custom-cursor {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: var(--accent-yellow);
+            box-shadow: 0 0 25px var(--accent-yellow);
+        }
+
+        @media (pointer: coarse) {
+            body { cursor: auto; }
+            #custom-cursor { display: none !important; }
+        }
+
+        /* 全域網格背景效果 */
+        .neon-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                linear-gradient(rgba(255, 85, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 85, 0, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -2;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0c; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-orange); border-radius: 4px; }
+
+        /* ==================== 右側玻璃浮動導覽欄 ==================== */
+        .floating-nav {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 20px 12px;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .float-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .float-dot:hover .float-tooltip,
+        .float-dot.active .float-tooltip {
+            opacity: 1;
+            transform: translateY(-50%) translateX(-15px);
+        }
+
+        .float-dot.active {
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+            transform: scale(1.3);
+        }
+
+        .float-tooltip {
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%) translateX(0px);
+            background: #121214;
+            border: 1px solid var(--primary-orange);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            white-space: nowrap;
+            letter-spacing: 1px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================== 置頂導覽欄（新增高級電競特效） ==================== */
+        nav {
+            padding: 0 60px;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--nav-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 99;
+            border-bottom: 1px solid rgba(255, 85, 0, 0.2);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.7);
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 40px; }
+        .logo {
+            font-size: 1.8rem; font-weight: 900; color: #fff;
+            letter-spacing: 3px; display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+        .logo span { color: var(--primary-orange); text-shadow: 0 0 15px rgba(255, 85, 0, 0.6); }
+
+        .nav-menu { display: flex; list-style: none; gap: 30px; }
+        .nav-menu a {
+            color: #aaa; text-decoration: none; font-size: 0.9rem; font-weight: bold;
+            letter-spacing: 1px; transition: 0.3s; padding: 10px 0; position: relative;
+        }
+        .nav-menu a:hover, .nav-menu a.active { color: #fff; }
+        
+        /* 置頂標籤懸停：Glitch 科技感故障閃爍效果 */
+        .nav-menu a:hover {
+            animation: navGlitch 0.3s linear infinite;
+        }
+        @keyframes navGlitch {
+            0% { text-shadow: 1px 0 var(--code-green), -1px 0 var(--primary-orange); }
+            50% { text-shadow: -1px 0 var(--code-green), 1px 0 var(--primary-orange); }
+            100% { text-shadow: 0 0 transparent; }
+        }
+
+        .nav-menu a::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
+            background: var(--primary-orange); transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+
+        .nav-right { display: flex; align-items: center; gap: 25px; }
+        
+        /* 語系切換 UI 優化 */
+        .lang-switch {
+            display: flex; gap: 8px; font-size: 0.85rem; color: #666; font-weight: bold;
+        }
+        .lang-switch span { transition: 0.3s; cursor: none; padding: 4px 8px; border-radius: 4px; }
+        .lang-switch span:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .lang-switch span.active { color: #fff; background: var(--primary-orange); box-shadow: 0 0 10px rgba(255,85,0,0.4); }
+
+        /* 大廠級別：動態流動能量條下載按鈕 */
+        .download-btn {
+            position: relative;
+            background: #000;
+            color: #fff; padding: 12px 30px; border-radius: 4px; text-decoration: none;
+            font-weight: 900; font-size: 0.85rem; transition: all 0.3s ease;
+            letter-spacing: 1px; text-transform: uppercase;
+            overflow: hidden;
+            border: 1px solid rgba(255, 85, 0, 0.5);
+            z-index: 1;
+        }
+        .download-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 85, 0, 0.4), transparent);
+            transition: 0.5s; z-index: -1;
+        }
+        .download-btn:hover::before {
+            left: 100%;
+        }
+        .download-btn:hover {
+            background: var(--primary-orange);
+            border-color: #fff;
+            box-shadow: 0 0 25px var(--primary-orange);
+            transform: translateY(-2px);
+        }
+
+        /* ==================== 標題與下落式遊戲特效區 ==================== */
+        .hero {
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(255,85,0,0.08) 0%, transparent 70%);
+        }
+
+        /* 3D 下落式遊戲賽道模擬動畫（JS會控制視差晃動） */
+        .rhythm-stage {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 800px; height: 100%;
+            perspective: 500px; pointer-events: none; z-index: 1;
+            transition: transform 0.2s ease-out;
+        }
+
+        .rhythm-track-container {
+            width: 100%; height: 150%; position: absolute; bottom: -20%;
+            transform: rotateX(60deg); display: flex;
+            border-left: 3px solid rgba(255, 85, 0, 0.3); border-right: 3px solid rgba(255, 85, 0, 0.3);
+            background: linear-gradient(to top, rgba(255, 85, 0, 0.1) 0%, transparent 80%);
+        }
+
+        .track-lane {
+            flex: 1; border-right: 1px dashed rgba(255, 255, 255, 0.08); position: relative;
+        }
+        .track-lane:last-child { border: none; }
+
+        .hero-hit-line {
+            position: absolute; bottom: 15%; left: 0; width: 100%; height: 4px;
+            background: var(--primary-orange); box-shadow: 0 0 20px var(--primary-orange);
+        }
+
+        .falling-note {
+            position: absolute; width: 70%; height: 25px; left: 15%; top: -50px;
+            border-radius: 6px; box-shadow: 0 0 25px currentColor; opacity: 0;
+            animation: note-drop 3s linear infinite;
+        }
+
+        .n-orange { background: var(--primary-orange); color: var(--primary-orange); }
+        .n-yellow { background: var(--accent-yellow); color: var(--accent-yellow); }
+        .n-green { background: var(--code-green); color: var(--code-green); }
+
+        .track-lane:nth-child(1) .falling-note { animation-delay: 0.2s; animation-duration: 2.4s; }
+        .track-lane:nth-child(2) .falling-note { animation-delay: 1.5s; animation-duration: 2s; }
+        .track-lane:nth-child(3) .falling-note { animation-delay: 0.8s; animation-duration: 2.7s; }
+        .track-lane:nth-child(4) .falling-note { animation-delay: 2.2s; animation-duration: 2.2s; }
+
+        @keyframes note-drop {
+            0% { top: -5%; opacity: 0; transform: scaleY(0.5); }
+            10% { opacity: 0.9; }
+            85% { opacity: 1; transform: scaleY(1); }
+            95% { opacity: 0; transform: scale(1.4); }
+            100% { top: 90%; opacity: 0; }
+        }
+
+        .hero-content { position: relative; z-index: 5; max-width: 900px; padding: 0 20px; }
+        .hero-tag {
+            background: rgba(255, 85, 0, 0.15); border: 1px solid var(--primary-orange);
+            color: var(--accent-yellow); padding: 6px 20px; border-radius: 50px;
+            font-size: 0.8rem; font-weight: bold; letter-spacing: 3px; display: inline-block; margin-bottom: 25px;
+        }
+        .hero h1 { 
+            font-size: 5rem; font-weight: 900; letter-spacing: 12px; text-transform: uppercase;
+            margin-bottom: 15px; text-shadow: 0 0 30px rgba(255,85,0,0.5);
+        }
+        .hero h1 span { color: var(--primary-orange); }
+        .hero p { color: #ccc; font-size: 1.2rem; letter-spacing: 6px; font-weight: bold; text-transform: uppercase; }
+
+        /* 通用區塊排版 */
+        section { padding: 120px 10%; position: relative; }
+        
+        .section-title { margin-bottom: 60px; position: relative; }
+        .section-title h2 { font-size: 2.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #fff; }
+        .section-title h2 span { color: #070708; text-shadow: none; background: #fff; padding: 2px 10px; border-radius: 4px; margin-left: 5px; }
+        .section-title p { color: #888; font-size: 1rem; margin-top: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;}
+
+        /* ==================== 遊戲介紹區 ==================== */
+        #intro {
+            background-color: var(--theme-overlay-85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,85,0,0.15);
+            border-top: 1px solid rgba(255,85,0,0.15);
+        }
+        .intro-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;
+        }
+        .intro-card {
+            background: rgba(7, 7, 8, 0.95);
+            border: 1px solid rgba(255, 85, 0, 0.2); padding: 40px 35px;
+            border-radius: 8px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden;
+        }
+        .intro-card:hover {
+            border-color: #fff; transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+        .intro-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary-orange);
+        }
+        .intro-card h3 { font-size: 1.4rem; color: #fff; margin-bottom: 15px; letter-spacing: 1px; font-weight: 900; }
+        .intro-card p { color: #aaa; font-size: 0.95rem; line-height: 1.8; }
+
+        /* ==================== 遊戲畫面區 ==================== */
+        #showcase {
+            background-color: var(--bg-dark);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .carousel-container {
+            position: relative; width: 100%; max-width: 1000px; margin: 0 auto;
+            overflow: hidden; border-radius: 12px; border: 2px solid rgba(255,85,0,0.4);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8); aspect-ratio: 16/9;
+        }
+        
+        .carousel-track {
+            display: flex; width: 400%; height: 100%;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .carousel-slide {
+            width: 25%; height: 100%; position: relative; overflow: hidden; cursor: none;
+        }
+
+        .carousel-slide img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.8); transition: 0.5s;
+        }
+        .carousel-slide:hover img { filter: brightness(1.0); }
+
+        .slide-caption {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(7,7,8,0.95) 0%, rgba(7,7,8,0.4) 70%, transparent 100%);
+            padding: 40px 40px 30px 40px;
+        }
+        .slide-tag { color: var(--accent-yellow); font-size: 0.8rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+        .slide-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 8px; color: #fff; }
+        .slide-desc { color: #ccc; font-size: 0.9rem; max-width: 80%; }
+
+        .carousel-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(7,7,8,0.8); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; width: 55px; height: 55px; border-radius: 50%;
+            font-size: 1.5rem; font-weight: bold; z-index: 10; transition: 0.3s; cursor: none;
+        }
+        .carousel-btn:hover {
+            background: #fff; border-color: #fff; color: var(--primary-orange);
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+        .btn-prev { left: 20px; }
+        .btn-next { right: 20px; }
+
+        .carousel-dots {
+            display: flex; justify-content: center; gap: 12px; margin-top: 30px;
+        }
+        .dot {
+            width: 10px; height: 100%; min-height: 10px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; transition: 0.3s; cursor: none;
+        }
+        .dot.active {
+            background: var(--primary-orange); width: 30px; border-radius: 10px;
+            box-shadow: 0 0 15px var(--primary-orange);
+        }
+
+        /* ==================== 技術介紹區 ==================== */
+        #tech {
+            background-color: var(--theme-overlay-85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,85,0,0.15);
+        }
+        .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 40px; }
+        .tech-spec-box {
+            background: rgba(7, 7, 8, 0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 35px;
+        }
+        .tech-spec-box h3 { font-size: 1.3rem; color: #fff; border-left: 4px solid var(--primary-orange); padding-left: 15px; margin-bottom: 15px; font-weight: 900; }
+        .tech-spec-box p { color: #aaa; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.7; }
+        .code-snippet {
+            background: #040405; color: var(--code-green); padding: 20px; border-radius: 4px;
+            font-family: 'Consolas', monospace; font-size: 0.85rem; white-space: pre-wrap;
+            border: 1px solid rgba(255,85,0,0.1); box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        /* ==================== Lightbox彈窗 ==================== */
+        .lightbox-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5,5,7,0.98); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+        }
+        .lightbox-content {
+            position: relative; max-width: 85%; max-height: 80vh; display: flex; flex-direction: column; align-items: center;
+        }
+        .lightbox-img {
+            max-width: 100%; max-height: 75vh; border: 2px solid var(--primary-orange);
+            border-radius: 6px; box-shadow: 0 0 50px rgba(255,85,0,0.4);
+        }
+        .lightbox-caption {
+            margin-top: 20px; color: var(--accent-yellow); font-size: 1.1rem; font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .lightbox-close {
+            position: absolute; top: -50px; right: 0; font-size: 2.5rem; color: #888; transition: 0.3s; cursor: none;
+        }
+        .lightbox-close:hover { color: #fff; transform: rotate(90deg); }
+
+        /* ==================== 底欄 ==================== */
+        footer {
+            padding: 60px 20px; text-align: center; background: #040405;
+            border-top: 1px solid #111; font-size: 0.85rem; color: #555; letter-spacing: 1px;
+        }
+        .footer-links { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
+        .footer-links a { color: #aaa; text-decoration: none; font-weight: bold; transition: 0.3s; cursor: none;}
+        .footer-links a:hover { color: var(--primary-orange); }
+        .footer-meta { font-weight: bold; color: #444; margin-top: 10px; }
+        .footer-meta span { color: #666; }
+
+        @media (max-width: 768px) {
+            nav { padding: 0 20px; }
+            .nav-menu, .nav-right .lang-switch { display: none; }
+            .hero h1 { font-size: 3rem; letter-spacing: 6px; }
+            section { padding: 80px 5%; }
+            .tech-grid { grid-template-columns: 1fr; }
+            .floating-nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="custom-cursor"></div>
+    <div class="neon-grid"></div>
+
+    <!-- 右側指示器（已綁定語系） -->
+    <div class="floating-nav">
+        <a href="#home" class="float-dot active"><span class="float-tooltip lang-target" data-tw="首頁主視覺" data-en="Hero Vision">首頁主視覺</span></a>
+        <a href="#intro" class="float-dot"><span class="float-tooltip lang-target" data-tw="遊戲核心介紹" data-en="Core Intro">遊戲核心介紹</span></a>
+        <a href="#showcase" class="float-dot"><span class="float-tooltip lang-target" data-tw="遊戲畫面展示" data-en="Showcase">遊戲畫面展示</span></a>
+        <a href="#tech" class="float-dot"><span class="float-tooltip lang-target" data-tw="核心技術 specs" data-en="Tech Specs">核心技術 specs</span></a>
+    </div>
+
+    <!-- 置頂導覽欄（已完成全語系切換支援） -->
+    <nav>
+        <div class="nav-left">
+            <div class="logo">LUMI<span>BEAT</span></div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="menu-link active lang-target" data-sec="home" data-tw="首頁" data-en="HOME">首頁</a></li>
+                <li><a href="#intro" class="menu-link lang-target" data-sec="intro" data-tw="核心介紹" data-en="INTRO">核心介紹</a></li>
+                <li><a href="#showcase" class="menu-link lang-target" data-sec="showcase" data-tw="畫面展示" data-en="SHOWCASE">畫面展示</a></li>
+                <li><a href="#tech" class="menu-link lang-target" data-sec="tech" data-tw="技術架構" data-en="TECHNICAL">技術架構</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <div class="lang-switch">
+                <span id="lang-tw" class="active" onclick="switchLanguage('tw')">繁中</span> / 
+                <span id="lang-en" onclick="switchLanguage('en')">EN</span>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=10C_uoaqlVFtscI69k-Gtxq2nHbIbxL0i" class="download-btn lang-target" data-tw="下載試玩版" data-en="DOWNLOAD DEMO">下載試玩版</a>
+        </div>
+    </nav>
+
+    <header class="hero" id="home">
+        <div class="rhythm-stage" id="rhythmStage">
+            <div class="rhythm-track-container">
+                <div class="track-lane"><div class="falling-note n-orange"></div></div>
+                <div class="track-lane"><div class="falling-note n-green"></div></div>
+                <div class="track-lane"><div class="falling-note n-yellow"></div></div>
+                <div class="track-lane"><div class="falling-note n-orange"></div></div>
+                <div class="hero-hit-line"></div>
+            </div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-tag">PURE PYTHON RHYTHM ENGINE</div>
+            <h1>Lumi<span>Beat</span></h1>
+            <p class="lang-target" data-tw="節奏動作冒險遊戲" data-en="Rhythm Action Adventure">節奏動作冒險遊戲</p>
+        </div>
+    </header>
+
+    <section id="intro">
+        <div class="section-title">
+            <h2 class="lang-target" data-tw="遊戲<span>介紹</span>" data-en="GAME<span>INTRO</span>">遊戲<span>介紹</span></h2>
+            <p>Pure Python Rhythm Engine Built From Scratch</p>
+        </div>
+        <div class="intro-grid">
+            <div class="intro-card">
+                <h3 class="lang-target" data-tw="純 Python 獨立研發核心" data-en="Proprietary Python Core">純 Python 獨立研發核心</h3>
+                <p class="lang-target" 
+                   data-tw="完全繞過傳統商業引擎，挑戰腳本語言處理高頻判定與多層級 Surface 畫布渲染的性能極限，達成輕量化與毫秒級高精準判定迴圈。" 
+                   data-en="Bypassing commercial engines to push script-level limits. Achieves sub-millisecond input polling and multi-layered surface rendering for ultra-low latency.">
+                   完全繞過傳統商業引擎，挑戰腳本語言處理高頻判定與多層級 Surface 畫布渲染的性能極限，達成輕量化與毫秒級高精準判定迴圈。
+                </p>
+            </div>
+            <div class="intro-card">
+                <h3 class="lang-target" data-tw="動態佈局自適應系統" data-en="Dynamic Auto-Scaling">動態佈局自適應系統</h3>
+                <p class="lang-target" 
+                   data-tw="具備自適應解析度縮放算法，不論是原生 768p 還是 4K 高畫質螢幕，軌道間距、音符大小與打擊判定線皆能保持完美黃金比例。" 
+                   data-en="Implements an advanced responsive layout grid. From native 768p up to crisp 4K monitors, note bounds, track lane scales, and judgment bars automatically align to perfect dynamic aspect ratios.">
+                   具備自適應解析度縮放算法，不論是原生 768p 還是 4K 高畫質螢幕，軌道間距、音符大小與打擊判定線皆能保持完美黃金比例。
+                </p>
+            </div>
+            <div class="intro-card">
+                <h3 class="lang-target" data-tw="極致打擊視覺反饋" data-en="High-Impact FX Engine">極致打擊視覺反饋</h3>
+                <p class="lang-target" 
+                   data-tw="搭載客製化連擊特效引擎。當 Combo 達到段位里程碑時，兩側舞台會爆發華麗的動態粒子，兼顧低階硬體的高效能流暢體驗。" 
+                   data-en="Features an optimized custom combo particles module. Reaching streak milestones triggers real-time alpha-blended stage bursts, maintaining steady frame rates even on low-end hardware hardware configuration.">
+                   搭載客製化連擊特效引擎。當 Combo 達到段位里程碑時，兩側舞台會爆發華麗的動態粒子，兼顧低階硬體的高效能流暢體驗。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="showcase">
+        <div class="section-title">
+            <h2 class="lang-target" data-tw="遊戲<span>畫面</span>" data-en="GAME<span>SHOWCASE</span>">遊戲<span>畫面</span></h2>
+            <p class="lang-target" data-tw="Game UI Aesthetics & Gameplay Interaction (點擊圖片可放大檢視)" data-en="Game UI Aesthetics & Gameplay Interaction (Click image to expand)">Game UI Aesthetics & Gameplay Interaction (點擊圖片可放大檢視)</p>
+        </div>
+        
+        <div class="carousel-container">
+            <button class="carousel-btn btn-prev" id="prevBtn">❬</button>
+            <button class="carousel-btn btn-next" id="nextBtn">❭</button>
+            <div class="carousel-track" id="carouselTrack">
+                <div class="carousel-slide" onclick="openLightbox(0)">
+                    <img src="KSR Lumibeat_1.png" alt="Main Menu Interface">
+                    <div class="slide-caption">
+                        <div class="slide-tag">UI / UX DESIGN</div>
+                        <div class="slide-title lang-target" data-tw="主選單交互介面" data-en="Main Menu UX">主選單交互介面</div>
+                        <div class="slide-desc lang-target" data-tw="精緻的和風鳥居背景結合炫目火光特效，提供流暢的互動選單。" data-en="Japanese style Torii gate artwork blended with real-time fire glow VFX loops.">精緻的和風鳥居背景結合炫目火光特效，提供流暢的互動選單。</div>
+                    </div>
+                </div>
+                <div class="carousel-slide" onclick="openLightbox(1)">
+                    <img src="KSR Lumibeat_2.png" alt="Track Selection Interface">
+                    <div class="slide-caption">
+                        <div class="slide-tag">TRACK SELECTION</div>
+                        <div class="slide-title lang-target" data-tw="歌曲選擇與難度配置" data-en="Song Select Dashboard">歌曲選擇與難度配置</div>
+                        <div class="slide-desc lang-target" data-tw="以動態黑膠唱片造型呈現曲目，支援 4K 模式與即時譜面資訊顯示。" data-en="Animated vinyl records showcase songs with real-time BPM, charts, and metadata display.">以動態黑膠唱片造型呈現曲目，支援 4K 模式與即時譜面資訊顯示。</div>
+                    </div>
+                </div>
+                <div class="carousel-slide" onclick="openLightbox(2)">
+                    <img src="KSR Lumibeat_3.png" alt="Gameplay Core">
+                    <div class="slide-caption">
+                        <div class="slide-tag">GAMEPLAY EXECUTION</div>
+                        <div class="slide-title lang-target" data-tw="下落式核心玩法" data-en="4-Key Rhythm Mechanics">下落式核心玩法</div>
+                        <div class="slide-desc lang-target" data-tw="基於 D、F、J、K 的標準鍵盤打擊配置，具備精準的實時打擊判定與雙壓連線顯示。" data-en="Standard D-F-J-K mapping featuring rigorous real-time window evaluations and chord connection lines.">基於 D、F、J、K 的標準鍵盤打擊配置，具備精準的實時打擊判定與雙壓連線顯示。</div>
+                    </div>
+                </div>
+                <div class="carousel-slide" onclick="openLightbox(3)">
+                    <img src="KSR Lumibeat_4.png" alt="Performance Evaluation Summary">
+                    <div class="slide-caption">
+                        <div class="slide-tag">PERFORMANCE SUMMARY</div>
+                        <div class="slide-title lang-target" data-tw="數據結算面板" data-en="Post-Game Summary Board">數據結算面板</div>
+                        <div class="slide-desc lang-target" data-tw="直觀展示最終得分、Max Combo、以及各判定級別的詳細統計。" data-en="Displays absolute precision stats, hit metrics, max streaks, and arcade-graded ranking responses.">直觀展示最終得分、Max Combo、以及各判定級別的詳細統計。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-dots" id="carouselDots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </section>
+
+    <section id="tech">
+        <div class="section-title">
+            <h2 class="lang-target" data-tw="技術<span>架構</span>" data-en="ARCHI<span>TECTURE</span>">技術<span>架構</span></h2>
+            <p>Core Engine Implementation & Pygame Code Snippets</p>
+        </div>
+        <div class="tech-grid">
+            <div class="tech-spec-box">
+                <h3 class="lang-target" data-tw="下落式音符判定迴圈" data-en="High-Frequency Polling Loop">下落式音符判定迴圈</h3>
+                <p class="lang-target" data-tw="高頻判定引擎每影格精確更新所有活躍音符的位置，並動態比對玩家的按鍵時間戳。" data-en="The low-latency iteration cycle tracks positions and vector deltas frame-by-frame, continuously matching against player triggers.">高頻判定引擎每影格精確更新所有活躍音符的位置，並動態比對玩家的按鍵時間戳。</p>
+                <div class="code-snippet"># Dynamic aspect alignment setup
+start_x = (config.WIDTH - (lane_w * lane_count)) // 2
+LX = [start_x + i * lane_w for i in range(lane_count)]
+HIT_LINE_Y = config.HEIGHT - 120</div>
+            </div>
+            <div class="tech-spec-box">
+                <h3 class="lang-target" data-tw="雙壓音符連線邏輯" data-en="Simultaneous Chord Rendering">雙壓音符連線邏輯</h3>
+                <p class="lang-target" data-tw="專為高難度客製化譜面設計。當引擎偵測到兩顆音符具備相同的時間戳衝突時會渲染連線。" data-en="Engine evaluates collision timestamps to bundle sync frames together, creating clean vector link arrays for complex note combinations.">專為高難度客製化譜面設計。當引擎偵測到兩顆音符具備相同的時間戳衝突時會渲染連線。</p>
+                <div class="code-snippet">if len(notes) > 1:
+    center_off = lane_w // 2
+    pygame.draw.line(screen, (255,255,255), \n                     (n1.x + center_off, n1.y), \n                     (n2.x + center_off, n2.y), 2)</div>
+            </div>
+            <div class="tech-spec-box">
+                <h3 class="lang-target" data-tw="非同步音樂音訊同步" data-en="Asynchronous Audio Syncing">非同步音樂音訊同步</h3>
+                <p class="lang-target" data-tw="利用底層 Mixer 進行毫秒級音訊載入，繞過 Python GIL 執行時間限制。" data-en="Deploys secondary Pygame mixer abstractions running out-of-band to bypass CPython global interpreter lock overhead.">利用底層 Mixer 進行毫秒級音訊載入，繞過 Python GIL 執行時間限制。</p>
+                <div class="code-snippet">pygame.mixer.music.load(audio_file)
+pygame.mixer.music.set_volume(config.global_volume)
+pygame.mixer.music.play()</div>
+            </div>
+            <div class="tech-spec-box">
+                <h3 class="lang-target" data-tw="階段性里程碑粒子特效" data-en="Burst Particle Dispatcher">階段性里程碑粒子特效</h3>
+                <p class="lang-target" data-tw="為了在低階硬體流暢運作，特效引擎使用優化過後的 Alpha 通道分段觸發機制。" data-en="Object pooling throttles high-volume light emissions. Fires batches via un-mapped alpha arrays smoothly at exact 20-combo marks.">為了在低階硬體流暢運作，特效引擎使用優化過後的 Alpha 通道分段觸發機制。</p>
+                <div class="code-snippet">if combo > 0 and combo % 20 == 0:
+    for _ in range(45):
+        particles.append(StageLightParticle(0, config.HEIGHT))
+        particles.append(StageLightParticle(config.WIDTH, config.HEIGHT))</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+            <img class="lightbox-img" id="lightboxImg" src="" alt="Expanded Visual Source">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="#">DISCORD</a>
+            <a href="#">GITHUB</a>
+            <a href="#">TWITTER</a>
+        </div>
+        <p>© 2026 PROJECT LUMIBEAT | ARCHITECT: GARY HSU</p>
+        <p class="footer-meta"><span class="lang-target" data-tw="維護時間：" data-en="Maintenance Sync: ">維護時間：</span><span>2026-05-22 09:43:51 CST</span> | Powered by Pygame Engine</p>
+    </footer>
+
+    <script>
+        // ==================== 自訂滑鼠指標與點擊特效 ====================
+        const cursor = document.getElementById('custom-cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        const addCursorHover = (elements) => {
+            elements.forEach(el => {
+                el.addEventListener('mouseenter', () => document.body.classList.add('clickable-hover'));
+                el.addEventListener('mouseleave', () => document.body.classList.remove('clickable-hover'));
+            });
+        };
+
+        // ==================== 新增：Hero 區塊 3D 賽道滑鼠互動視差特效 ====================
+        const stage = document.getElementById('rhythmStage');
+        if(stage) {
+            document.addEventListener('mousemove', (e) => {
+                const xAxis = (window.innerWidth / 2 - e.clientX) / 35; 
+                stage.style.transform = `translateX(-50%) rotateY(${xAxis}deg)`;
+            });
+            document.addEventListener('mouseleave', () => {
+                stage.style.transform = `translateX(-50%) rotateY(0deg)`;
+            });
+        }
+        
+        // ==================== 輪播功能程式碼 (Carousel) ====================
+        const track = document.getElementById('carouselTrack');
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dots = document.querySelectorAll('.dot');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        
+        let currentIndex = 0;
+        let autoSlideInterval;
+
+        const updateCarousel = (index) => {
+            track.style.transform = `translateX(-${index * 25}%)`;
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[index].classList.add('active');
+            currentIndex = index;
+        };
+
+        const nextSlide = () => {
+            let next = (currentIndex + 1) % slides.length;
+            updateCarousel(next);
+        };
+
+        const prevSlide = () => {
+            let prev = (currentIndex - 1 + slides.length) % slides.length;
+            updateCarousel(prev);
+        };
+
+        nextBtn.addEventListener('click', () => { nextSlide(); resetAutoSlide(); });
+        prevBtn.addEventListener('click', () => { prevSlide(); resetAutoSlide(); });
+
+        dots.forEach((dot, idx) => {
+            dot.addEventListener('click', () => { updateCarousel(idx); resetAutoSlide(); });
+        });
+
+        const startAutoSlide = () => { autoSlideInterval = setInterval(nextSlide, 5000); };
+        const resetAutoSlide = () => { clearInterval(autoSlideInterval); startAutoSlide(); };
+        
+        startAutoSlide();
+
+        // ==================== 國際化語系雙語切換系統（含彈窗與置頂欄數據） ====================
+        const imagesData = {
+            tw: [
+                { src: 'KSR Lumibeat_1.png', cap: '主選單交互介面：極簡和風與火焰粒子反饋' },
+                { src: 'KSR Lumibeat_2.png', cap: '選曲介面：動態黑膠唱片造型與譜面資訊顯示' },
+                { src: 'KSR Lumibeat_3.png', cap: '戰鬥核心：4K 下落式經典音軌配置與判定線' },
+                { src: 'KSR Lumibeat_4.png', cap: '數據結算面板：全方位打擊精準度數據統計' }
+            ],
+            en: [
+                { src: 'KSR Lumibeat_1.png', cap: 'Main Menu Concept: Minimalism Shrine Setting & Particle Feedbacks' },
+                { src: 'KSR Lumibeat_2.png', cap: 'Track Selection UI: Animated Records Panel & Chart Configurations' },
+                { src: 'KSR Lumibeat_3.png', cap: 'Gameplay Core Loop: 4K Falling Rails & Instant Evaluation Windows' },
+                { src: 'KSR Lumibeat_4.png', cap: 'Performance Evaluation Dashboard: Comprehensive Accuracy Spread Graphs' }
+            ]
+        };
+
+        let currentLang = 'tw'; 
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            
+            document.getElementById('lang-tw').classList.toggle('active', lang === 'tw');
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            
+            document.documentElement.lang = lang === 'tw' ? 'zh-TW' : 'en';
+
+            const targets = document.querySelectorAll('.lang-target');
+            targets.forEach(el => {
+                const text = el.getAttribute(`data-${lang}`);
+                if (text) {
+                    // 如果元素含有選單的高級 span 結構，使用 innerHTML 以免破壞樣式
+                    el.innerHTML = text;
+                }
+            });
+
+            // 如果燈箱正開著，切換語系時同步刷新燈箱內的文字敘述
+            const lightboxModal = document.getElementById('lightboxModal');
+            if (lightboxModal.style.display === 'flex') {
+                const currentSrc = document.getElementById('lightboxImg').src;
+                // 從目前圖片檔名反推索引值
+                const index = imagesData.tw.findIndex(item => currentSrc.includes(item.src));
+                if (index !== -1) {
+                    document.getElementById('lightboxCaption').innerText = imagesData[lang][index].cap;
+                }
+            }
+        }
+
+        // ==================== Lightbox 彈窗功能 ====================
+        const openLightbox = (index) => {
+            document.getElementById('lightboxImg').src = imagesData[currentLang][index].src;
+            document.getElementById('lightboxCaption').innerText = imagesData[currentLang][index].cap;
+            document.getElementById('lightboxModal').style.display = 'flex';
+        };
+
+        const closeLightbox = () => {
+            document.getElementById('lightboxModal').style.display = 'none';
+        };
+
+        // ==================== 滾動監聽（導覽點亮） ====================
+        const sections = document.querySelectorAll('header, section');
+        const floatDots = document.querySelectorAll('.float-dot');
+        const menuLinks = document.querySelectorAll('.menu-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(sec => {
+                const secTop = sec.offsetTop;
+                if (pageYOffset >= secTop - 200) {
+                    current = sec.getAttribute('id');
+                }
+            });
+
+            floatDots.forEach(dot => {
+                dot.classList.remove('active');
+                if (dot.getAttribute('href').includes(current)) {
+                    dot.classList.add('active');
+                }
+            });
+
+            menuLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-sec') === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // 初始化互動組件滑鼠監聽
+        setTimeout(() => {
+            addCursorHover(document.querySelectorAll('a, button, .carousel-slide, .dot, .lang-switch span, .lightbox-close'));
+        }, 100);
+    </script>
+</body>
+</html>
